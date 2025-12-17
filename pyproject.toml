@@ -1,0 +1,19 @@
+[project]
+name = "custom-gpt-scraper"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "exa-py>=2.0.1",
+    "fasttext>=0.9.3",
+    "langdetect>=1.0.9",
+    "pandas>=2.3.3",
+    "playwright>=1.57.0",
+    "playwright-stealth>=2.0.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "scikit-learn>=1.8.0",
+    "tqdm>=4.67.1",
+]

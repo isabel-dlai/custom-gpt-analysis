@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Ecosystem Taxonomy Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            color: #718096;
+            font-size: 1.1em;
+            margin-top: 15px;
+        }
+
+        .stats strong {
+            color: #667eea;
+        }
+
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .cluster-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cluster-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .cluster-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .cluster-count {
+            font-size: 1.8em;
+            font-weight: 800;
+            padding: 5px 15px;
+            border-radius: 10px;
+            color: white;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .cluster-percentage {
+            font-size: 0.9em;
+            color: #718096;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        .sub-clusters {
+            list-style: none;
+        }
+
+        .sub-cluster {
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 0.95em;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sub-cluster:hover {
+            color: #667eea;
+            background-color: #f7fafc;
+        }
+
+        .sub-cluster:last-child {
+            border-bottom: none;
+        }
+
+        .sub-cluster-header {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .sub-cluster-header::before {
+            content: '▸';
+            color: #a0aec0;
+            margin-right: 10px;
+            font-size: 0.8em;
+            transition: transform 0.2s ease;
+        }
+
+        .sub-cluster.expanded .sub-cluster-header::before {
+            transform: rotate(90deg);
+        }
+
+        .sub-cluster-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding-left: 24px;
+        }
+
+        .sub-cluster.expanded .sub-cluster-details {
+            max-height: 200px;
+            margin-top: 8px;
+        }
+
+        .example-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .example-title {
+            font-weight: 700;
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+
+        .example-desc {
+            font-size: 0.85em;
+            line-height: 1.4;
+            opacity: 0.95;
+            margin-bottom: 8px;
+        }
+
+        .example-link {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            font-size: 0.8em;
+            text-decoration: none;
+            color: white;
+            transition: background 0.2s ease;
+        }
+
+        .example-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Color scheme for clusters */
+        .cluster-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cluster-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .cluster-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .cluster-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .cluster-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .cluster-6 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .cluster-7 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .cluster-8 { background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); }
+        .cluster-9 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .cluster-10 { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+        .cluster-11 { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+        .cluster-12 { background: linear-gradient(135deg, #f8ceec 0%, #a88beb 100%); }
+        .cluster-13 { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
+        .cluster-14 { background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%); }
+
+        @media (max-width: 768px) {
+            .cluster-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .demo-note {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .demo-note strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 GPT Ecosystem Taxonomy</h1>
+            <div class="stats">
+                <strong>8,092</strong> English GPTs analyzed from ChatGPT Store<br>
+                <strong>77.8%</strong> Classified | <strong>22.2%</strong> Unclassified<br>
+                Generated: December 15, 2025
+            </div>
+        </header>
+
+        <div class="demo-note">
+            <strong>✨ Click on any sub-cluster</strong> to expand and see an example GPT with description and link!<br>
+            Click the arrow to reveal representative examples from each category.
+        </div>
+
+        <div class="cluster-grid">
+
+            <!-- Cluster 1 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">1. Creative Content Generation</div>
+                        <div class="cluster-percentage">17.0% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-1">1,373</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-1" style="width: 0%" data-width="17%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Image & Visual Art Generation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">GPT Icon Generator</div>
+                                <div class="example-desc">Creates custom icons and visual branding elements for GPTs and applications</div>
+                                <a href="https://chatgpt.com/g/g-00Lkphpld-gpt-icon-generator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Logo & Brand Design</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Logo Creator</div>
+                                <div class="example-desc">Professional logo design with brand strategy and color psychology</div>
+                                <a href="https://chatgpt.com/g/g-gFt1ghYJl-logo-creator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Character & Avatar Creation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">CharForge</div>
+                                <div class="example-desc">Creates detailed character designs for games, stories, and creative projects</div>
+                                <a href="https://chatgpt.com/g/g-00Lh1zR3f-charforge" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Story & Narrative Generation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">AI Story Generator</div>
+                                <div class="example-desc">Generates captivating tales and narratives with advanced storytelling techniques</div>
+                                <a href="https://chatgpt.com/g/g-LzrB0QwAB-ai-story-generator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Animation & GIF Creation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">GIF GPT</div>
+                                <div class="example-desc">Generates 8-bit style animated GIFs with retro aesthetic</div>
+                                <a href="https://chatgpt.com/g/g-0f6fZG9q0-gif-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Meme & Viral Content Creation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Meme Master</div>
+                                <div class="example-desc">Creates trending memes with cultural awareness and humor optimization</div>
+                                <a href="https://chatgpt.com/g/g-a7VLbl0jm-meme-master" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Artistic Style Transfer</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Artistic Vision</div>
+                                <div class="example-desc">Transforms images using famous artistic styles and movements</div>
+                                <a href="https://chatgpt.com/g/g-6tjd1B8sG-artistic-vision" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 2 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">2. Specialized Domain Experts</div>
+                        <div class="cluster-percentage">13.8% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-2">1,120</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-2" style="width: 0%" data-width="13.8%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Hard Sciences (Physics, Chemistry, Biology)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Biochemistry, Genetics and Molecular Biology</div>
+                                <div class="example-desc">Explains genetic mutations, molecular mechanisms, and biochemical pathways with research-level depth</div>
+                                <a href="https://chatgpt.com/g/g-80BBfRYBn-biochemistry-genetics-and-molecular-biology" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Mathematics & Advanced Computation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">ODE Calculator</div>
+                                <div class="example-desc">Scholarly ordinary differential equation solver with step-by-step proofs</div>
+                                <a href="https://chatgpt.com/g/g-z1lIx3L13-ode-calculator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Psychology & Behavioral Sciences</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Psychology Insight Analyzer</div>
+                                <div class="example-desc">Provides evidence-based psychological analysis and therapeutic frameworks</div>
+                                <a href="https://chatgpt.com/g/g-00M3Go7mz-psychology-insight-analyzer" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Space & Astronomy</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Galaxy Chat</div>
+                                <div class="example-desc">Expert in astronomy, astrophysics, and space science communication</div>
+                                <a href="https://chatgpt.com/g/g-057LZjps8-galaxy-chat" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Linguistics & Language Theory</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">XenoLinguo</div>
+                                <div class="example-desc">Generates and analyzes constructed languages with linguistic rigor</div>
+                                <a href="https://chatgpt.com/g/g-00Cjtpc0z-xenolinguo-alien-language-generated-by" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Philosophy & Ethics</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">C.G. Jung</div>
+                                <div class="example-desc">Deep philosophical and psychological insights based on Jungian analytical psychology</div>
+                                <a href="https://chatgpt.com/g/g-i21b4H7Mf-c-g-jung" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Advanced Engineering</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Nanofabrication</div>
+                                <div class="example-desc">Research and development of nanomaterial fabrication techniques</div>
+                                <a href="https://chatgpt.com/g/g-67e749d83f0881918616c085b1a580d0-nanofabrication" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 3 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">3. Personal Development & Coaching</div>
+                        <div class="cluster-percentage">7.3% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-3">592</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-3" style="width: 0%" data-width="7.3%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Career & Professional Coaching</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Engineering Manager Coach</div>
+                                <div class="example-desc">Specialized coaching for engineering managers on leadership and team dynamics</div>
+                                <a href="https://chatgpt.com/g/g-00Vxlldtm-engineering-manager-coach" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Life Coaching & Goal Setting</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Life Navigator</div>
+                                <div class="example-desc">Helps set meaningful goals and create actionable life plans</div>
+                                <a href="https://chatgpt.com/g/g-8FixlbFKj-life-navigator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Communication & Interpersonal Skills</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Feedback Coach</div>
+                                <div class="example-desc">Practice giving and receiving feedback through role-play scenarios</div>
+                                <a href="https://chatgpt.com/g/g-ZWQuVnjkF-feedback-coach" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Leadership Development</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Leadership Coach</div>
+                                <div class="example-desc">Develops leadership skills with evidence-based frameworks and exercises</div>
+                                <a href="https://chatgpt.com/g/g-sEKD2Zy0m-leadership-coach" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Habit Formation & Behavior Change</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Quit Alcohol | Tracy</div>
+                                <div class="example-desc">Compassionate guide for overcoming alcohol dependency with support strategies</div>
+                                <a href="https://chatgpt.com/g/g-67b26a0a91d08191b37a0a289733ba82-quit-alcohol-tracy" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Confidence & Self-Esteem</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Confidence Builder</div>
+                                <div class="example-desc">Structured exercises to develop self-confidence and overcome self-doubt</div>
+                                <a href="https://chatgpt.com/g/g-3kPQnXXfn-confidence-builder" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Mentorship & Guidance</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Red Team Mentor</div>
+                                <div class="example-desc">Mentorship for cybersecurity red team professionals</div>
+                                <a href="https://chatgpt.com/g/g-03Nvt600n-red-team-mentor" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 4 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">4. Educational & Learning</div>
+                        <div class="cluster-percentage">6.5% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-4">522</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-4" style="width: 0%" data-width="6.5%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Test Preparation (SAT, ACT, GRE)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Study Buddy</div>
+                                <div class="example-desc">Comprehensive SAT, ACT, Accuplacer, and AP exam preparation with practice questions</div>
+                                <a href="https://chatgpt.com/g/g-3guUZJ6qF-study-buddy" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Mathematics Tutoring</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Math Solver</div>
+                                <div class="example-desc">Step-by-step math problem solving with clear explanations</div>
+                                <a href="https://chatgpt.com/g/g-PLYSLfAy3-math-solver" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Language Learning</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">German Teacher GPT</div>
+                                <div class="example-desc">Conversation practice, grammar correction, and vocabulary building for German</div>
+                                <a href="https://chatgpt.com/g/g-iNQwhh1qy-german-teacher-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">STEM Education</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Universal Primer</div>
+                                <div class="example-desc">The fastest way to learn anything hard - complex STEM concepts made accessible</div>
+                                <a href="https://chatgpt.com/g/g-GbLbctpPz-universal-primer" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Programming & Coding Education</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Code Buddy</div>
+                                <div class="example-desc">Educational assistant for beginners learning coding and AI fundamentals</div>
+                                <a href="https://chatgpt.com/g/g-aOmUbFbcZ-code-buddy" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Academic Writing & Research</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Abstract Generator</div>
+                                <div class="example-desc">Guides college students through writing effective essay abstracts</div>
+                                <a href="https://chatgpt.com/g/g-4UWODpApy-abstract-generator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">General Knowledge & Trivia</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">WikiGPT</div>
+                                <div class="example-desc">Access and explain Wikipedia content with enhanced context</div>
+                                <a href="https://chatgpt.com/g/g-sN4UpxD0L-wikigpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 5 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">5. Productivity & Organization</div>
+                        <div class="cluster-percentage">5.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-5">409</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-5" style="width: 0%" data-width="5.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Project Management</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Todoist Project Management Guide</div>
+                                <div class="example-desc">Organize tasks and projects with Todoist best practices</div>
+                                <a href="https://chatgpt.com/g/g-46CgTNcL8" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Note-Taking & Knowledge Management</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Bullet Journaling Prodigy</div>
+                                <div class="example-desc">Create personalized bullet journals with custom layouts and habit tracking</div>
+                                <a href="https://chatgpt.com/g/g-4uSQohyLW-bullet-journaling-prodigy" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Time Management & Scheduling</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Calendar Optimizer</div>
+                                <div class="example-desc">Analyzes schedules and suggests time management improvements</div>
+                                <a href="https://chatgpt.com/g/g-7MsBmUB2d-calendar-optimizer" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Personal Assistant</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Apollo GPT</div>
+                                <div class="example-desc">Personal helper and organizer for practically everything</div>
+                                <a href="https://chatgpt.com/g/g-DyxVk0WN0-apollo-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Workflow Automation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">GPT Cookbook Assistant</div>
+                                <div class="example-desc">Helps create automated workflows using GPT capabilities</div>
+                                <a href="https://chatgpt.com/g/g-0Cjgm4Hmw-gpt-cookbook-assistant" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Document Organization</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Digital Legacy Planner</div>
+                                <div class="example-desc">Manage digital assets and plan for digital afterlife</div>
+                                <a href="https://chatgpt.com/g/g-BQMN8wQ6j-digital-legacy-planner" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 6 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">6. Professional Business Tools</div>
+                        <div class="cluster-percentage">4.7% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-6">382</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-6" style="width: 0%" data-width="4.7%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Pitch Deck & Presentation Creation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Pitch Deck GPT</div>
+                                <div class="example-desc">World-class pitch deck creation for startups and fundraising</div>
+                                <a href="https://chatgpt.com/g/g-1XGd3uF1T-pitch-deck-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Business Planning & Strategy</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Business Ideas Plan Generator</div>
+                                <div class="example-desc">Generate low-competition business ideas with complete business plans</div>
+                                <a href="https://chatgpt.com/g/g-VLxryqnlj-business-ideas-plan-generator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Sales & Lead Generation</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Sales Assistant</div>
+                                <div class="example-desc">Ultimate sales tool with proposal writing and presentation skills</div>
+                                <a href="https://chatgpt.com/g/g-CS0BEb5pJ-sales-assistant-ultimate-sales-tool-for-sellers" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Financial Analysis & Investment</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Buffett Investment Tool</div>
+                                <div class="example-desc">Investment analysis inspired by Warren Buffett's strategies</div>
+                                <a href="https://chatgpt.com/g/g-u7kq0UsG2-buffett-investment-tool" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Consulting & Advisory</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Executive Insight</div>
+                                <div class="example-desc">Senior McKinsey-level executive insights and data-driven recommendations</div>
+                                <a href="https://chatgpt.com/g/g-DLrpkpntx-executive-insight" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Market Research & Analysis</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Business Lookup</div>
+                                <div class="example-desc">Locate businesses and analyze market landscapes</div>
+                                <a href="https://chatgpt.com/g/g-0DxZTgo0i-business-lookup" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">SaaS & Technology Business</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">SaaS</div>
+                                <div class="example-desc">Business-oriented discussions on SaaS models and strategies</div>
+                                <a href="https://chatgpt.com/g/g-T2bAANodC-saas" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 7 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">7. Writing & Content Marketing</div>
+                        <div class="cluster-percentage">4.6% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-7">375</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-7" style="width: 0%" data-width="4.6%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">SEO & Search Optimization</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Keyword Planner SEO</div>
+                                <div class="example-desc">SEO keyword research and content optimization strategies</div>
+                                <a href="https://chatgpt.com/g/g-05Ju8F8Ts-keyword-planner-seo" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Social Media Content</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Viral Muse</div>
+                                <div class="example-desc">Transforms tweet ideas into viral-worthy content</div>
+                                <a href="https://chatgpt.com/g/g-0LVKVFAOE-viral-muse" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Copywriting & Sales Copy</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Brand Crafter</div>
+                                <div class="example-desc">Creates compelling brand messaging and marketing copy</div>
+                                <a href="https://chatgpt.com/g/g-07Kcpnfmn-brand-crafter" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Product Descriptions</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Product Description Generator</div>
+                                <div class="example-desc">Generates product descriptions for small business physical products</div>
+                                <a href="https://chatgpt.com/g/g-Z6qhetSRr-product-description-generator" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Blog & Article Writing</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Newsletter Summarizer</div>
+                                <div class="example-desc">Summarizes newsletters to save time and extract key insights</div>
+                                <a href="https://chatgpt.com/g/g-rkfllG5TM" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Email Marketing</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Responder</div>
+                                <div class="example-desc">Helps craft friendly and effective email responses</div>
+                                <a href="https://chatgpt.com/g/g-Sdzx1bnMN-responder" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Brand Voice Development</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Execu-X Post Companion</div>
+                                <div class="example-desc">Professional X/Twitter posts that ensure engagement</div>
+                                <a href="https://chatgpt.com/g/g-3wv1Wj3Rg-execu-x-post-companion" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 8 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">8. Legal & Compliance</div>
+                        <div class="cluster-percentage">4.5% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-8">363</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-8" style="width: 0%" data-width="4.5%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Contract Law & Drafting</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Law & Order</div>
+                                <div class="example-desc">AI legal assistant for contract law and NDA drafting</div>
+                                <a href="https://chatgpt.com/g/g-23MFe5i3r-law-order" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Jurisdiction-Specific Law (US)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">LexiAI: US Law</div>
+                                <div class="example-desc">Multilingual AI legal assistant for US law queries and research</div>
+                                <a href="https://chatgpt.com/g/g-26Ogj8JJ4-lexiai-us-law" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Jurisdiction-Specific Law (UK/International)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Pre-Solicitor AI: UK Law Simplified</div>
+                                <div class="example-desc">Simplifies UK laws before consulting a solicitor, with real case examples</div>
+                                <a href="https://chatgpt.com/g/g-COySiYHrU-pre-solicitor-aitm-uk-law-simplified-free" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Regulatory Compliance</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">California Building Code Helper</div>
+                                <div class="example-desc">Expert in California building codes and construction regulations</div>
+                                <a href="https://chatgpt.com/g/g-hiahMzXsY-california-building-code-helper" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Supreme Court & Case Law</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Supreme Court Rulings</div>
+                                <div class="example-desc">Analyzes and explains Supreme Court decisions and legal precedents</div>
+                                <a href="https://chatgpt.com/g/g-prBU1ubiC-supreme-court-rulings" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Specialized Legal Domains</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Kazakhstani Law Assistant</div>
+                                <div class="example-desc">Specialized knowledge of Kazakhstan's legal system</div>
+                                <a href="https://chatgpt.com/g/g-0BI04f09L-kazakhstani-law-assistant" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 9 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">9. Technical & Coding</div>
+                        <div class="cluster-percentage">4.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-9">329</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-9" style="width: 0%" data-width="4.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Web Development (Frontend/Backend)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">CSS Code Helper</div>
+                                <div class="example-desc">CSS design assistance with code examples and best practices</div>
+                                <a href="https://chatgpt.com/g/g-ihUOhctYf-css-code-helper" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Specific Languages (Python, JavaScript, etc.)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">JavaScript GPT</div>
+                                <div class="example-desc">Expert JavaScript programming assistance and debugging</div>
+                                <a href="https://chatgpt.com/g/g-0Fjo9Edoq-javascript-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Database & SQL</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Beta SQL Expert Pro</div>
+                                <div class="example-desc">Advanced SQL optimization and complex query development</div>
+                                <a href="https://chatgpt.com/g/g-6740a711568c819189f561c15e0707e6-beta-sql-expert-pro" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">DevOps & Infrastructure</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Linux Specialist</div>
+                                <div class="example-desc">Expert in Linux, DevOps, and Infrastructure as Code</div>
+                                <a href="https://chatgpt.com/g/g-EkGy9mnx9-linux-specialist" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Smart Contracts & Blockchain</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Contract Builder 2.0</div>
+                                <div class="example-desc">Latest strategies for reducing gas costs in EVM smart contracts</div>
+                                <a href="https://chatgpt.com/g/g-jUMcG3wTK-contract-builder-2-0" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">IDE & Development Tools</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Visual Studio Code Expert</div>
+                                <div class="example-desc">Expert advice on VS Code features and workflow optimization</div>
+                                <a href="https://chatgpt.com/g/g-FYMRmDqEY-visual-studio-code-expert" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Code Review & Debugging</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Code Whiz Pro</div>
+                                <div class="example-desc">Advanced code review and debugging assistance</div>
+                                <a href="https://chatgpt.com/g/g-0Sjxa4A1J-code-whiz-pro" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 10 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">10. Health & Wellness</div>
+                        <div class="cluster-percentage">3.8% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-10">305</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-10" style="width: 0%" data-width="3.8%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Dermatology & Skin Care</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Dermatology Advisor</div>
+                                <div class="example-desc">Upload skin condition photos for analysis and treatment suggestions</div>
+                                <a href="https://chatgpt.com/g/g-XdmUwHrDs-dermatology-advisor" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Nutrition & Diet Planning</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Chef NutriGourmet</div>
+                                <div class="example-desc">Chef and nutritionist specializing in low-carb recipes and meal plans</div>
+                                <a href="https://chatgpt.com/g/g-P0TXECLkv-chef-nutrigourmet" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Mental Health Support</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Mental Health Conversation Guide</div>
+                                <div class="example-desc">Supportive conversations for mental health and emotional well-being</div>
+                                <a href="https://chatgpt.com/g/g-0Unl1Zwyp-mental-health-conversation-guide" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Fitness & Exercise</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Swim Coach Pro</div>
+                                <div class="example-desc">Personal swim training expert for technique, fitness, and motivation</div>
+                                <a href="https://chatgpt.com/g/g-088Zut1ap-swim-coach-pro" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Medical Information & Conditions</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">COVID-19</div>
+                                <div class="example-desc">Information and guidance about COVID-19 pandemic</div>
+                                <a href="https://chatgpt.com/g/g-0Vutlfcvf-covid-19" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Specialized Health Conditions</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">ARFID Helper</div>
+                                <div class="example-desc">Supportive guide for ARFID sufferers with detailed food descriptions</div>
+                                <a href="https://chatgpt.com/g/g-0t6atNK4C-arfid-helper" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Healthcare Professional Support</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Healthcare Support Workers Assistant</div>
+                                <div class="example-desc">Enhances healthcare workers' daily tasks and workflows</div>
+                                <a href="https://chatgpt.com/g/g-a30IbALzW-healthcare-support-workers-all-other-assistant" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 11 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">11. Entertainment & Gaming</div>
+                        <div class="cluster-percentage">3.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-11">249</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-11" style="width: 0%" data-width="3.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Role-Playing Games (RPG)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">The Oracle</div>
+                                <div class="example-desc">Perfect oracle for solo or cooperative RPG GM emulation and storytelling</div>
+                                <a href="https://chatgpt.com/g/g-qdH2XGV5M-the-oracle" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Video Game Guides</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Soul Seeker GPT</div>
+                                <div class="example-desc">Guide for souls-like games blending gameplay strategies with lore</div>
+                                <a href="https://chatgpt.com/g/g-ySVdGHfgB-soul-seeker-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Sports Analysis & Statistics</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Tracer Bullet</div>
+                                <div class="example-desc">Player performance information during IPL 2024 cricket matches</div>
+                                <a href="https://chatgpt.com/g/g-3HyguSH8I-tracer-bullet" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Interactive Story Games</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Text Quest</div>
+                                <div class="example-desc">Interactive text-based adventure game with dynamic storytelling</div>
+                                <a href="https://chatgpt.com/g/g-09Gpm0Nti-text-quest" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Battle Simulators</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Battle GPT</div>
+                                <div class="example-desc">AI battle realism simulator with policy-compliant visuals</div>
+                                <a href="https://chatgpt.com/g/g-GsRUjaYvz-battle-gpt" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Puzzle & Challenge Games</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Situation Puzzle</div>
+                                <div class="example-desc">Solve situation puzzles (海龟汤) with logical deduction</div>
+                                <a href="https://chatgpt.com/g/g-KHcdRU9or-situation-puzzle-hai-gui-tang" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Survival & Strategy Games</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Survival Mentor</div>
+                                <div class="example-desc">Engaging survival challenge game with dynamic scenarios</div>
+                                <a href="https://chatgpt.com/g/g-0i2rSQUGt-survival-mentor" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 12 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">12. Spiritual & Mystical</div>
+                        <div class="cluster-percentage">2.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-12">167</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-12" style="width: 0%" data-width="2.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Tarot & Card Reading</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Tarot Love</div>
+                                <div class="example-desc">Tarot card readings focused on relationship guidance</div>
+                                <a href="https://chatgpt.com/g/g-turuXxK5O-tarot-love" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Astrology & Horoscopes</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Daily Horoscope Numbers & Biorhythms</div>
+                                <div class="example-desc">Daily astrological forecasts with numerology and biorhythm analysis</div>
+                                <a href="https://chatgpt.com/g/g-aLVuuBB9z-daily-horoscope-numbers-biorhythms-from-seeds-net" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Oracle & Divination</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">The Oracle of Delphai</div>
+                                <div class="example-desc">Ancient oracle wisdom and prophetic insights</div>
+                                <a href="https://chatgpt.com/g/g-0Aiuh2Npa-the-oracle-of-delphai-apollo-the-seer" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Religious & Spiritual Texts</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">KJV Scripture Scholar</div>
+                                <div class="example-desc">King James Version Bible expert with interpretations</div>
+                                <a href="https://chatgpt.com/g/g-Ijn8Z6frl-kjv-scripture-scholar" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Palmistry & Physical Divination</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Palm Reader</div>
+                                <div class="example-desc">Interprets palm readings from uploaded hand images</div>
+                                <a href="https://chatgpt.com/g/g-5woUyUDBR-palm-reader" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Wisdom & Philosophy</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Oracle of Wisdom</div>
+                                <div class="example-desc">Ancient wisdom and philosophical insights for modern life</div>
+                                <a href="https://chatgpt.com/g/g-TaAYv7qNm-oracle-of-wisdom" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Direct Divine Communication</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Talk to God</div>
+                                <div class="example-desc">Spiritual conversations framed as divine communication</div>
+                                <a href="https://chatgpt.com/g/g-7T7TFTXxM-talk-to-god" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 13 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">13. Niche Hobby & Lifestyle</div>
+                        <div class="cluster-percentage">1.3% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-13">107</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-13" style="width: 0%" data-width="1.3%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Sports & Fitness Coaching</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Swimming Coach</div>
+                                <div class="example-desc">Specialized swimming technique and training guidance</div>
+                                <a href="https://chatgpt.com/g/g-0Tkruotfk-swimming-coach" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Crafts & DIY Projects</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Beehive Builder</div>
+                                <div class="example-desc">Helper for DIY builders designing horizontal beehives</div>
+                                <a href="https://chatgpt.com/g/g-ccSSArTEk-beehive-builder" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Textile Arts (Quilting, Sewing, Knitting)</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Patchwork Pal Quilter's Aid</div>
+                                <div class="example-desc">Quilting projects with pattern ideas, sewing tips, and fabric advice</div>
+                                <a href="https://chatgpt.com/g/g-yaLSMy7Q2-patchwork-pal-quilter-s-aid" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Home Decor & Interior Design</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Christmas Decorations</div>
+                                <div class="example-desc">Festive guide to Christmas decorations and holiday home decor</div>
+                                <a href="https://chatgpt.com/g/g-waqDkUJEv-christmas-decorations" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Travel & Tourism</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Flights</div>
+                                <div class="example-desc">Flight search and travel planning assistance</div>
+                                <a href="https://chatgpt.com/g/g-0A9Iqsdml-flights" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Wedding Planning</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Best Man/Maid of Honor Wedding Speech</div>
+                                <div class="example-desc">Craft memorable wedding speeches for best man or maid of honor</div>
+                                <a href="https://chatgpt.com/g/g-0Msyma1Ec-best-man-maid-of-honor-wedding-speech" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Specialized Collecting & Hobbies</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Horse Racing Form Analyst</div>
+                                <div class="example-desc">Detailed analysis of horse racing data and performance trends</div>
+                                <a href="https://chatgpt.com/g/g-V8DkAO9eK-horse-racing-form-analyst" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- Cluster 14 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">14. Unclassified</div>
+                        <div class="cluster-percentage">22.2% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-14">1,799</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-14" style="width: 0%" data-width="22.2%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Extremely niche or unique purposes</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Proxy</div>
+                                <div class="example-desc">Description too vague to classify: 'New version of GPT available'</div>
+                                <a href="https://chatgpt.com/g/g-0WRddrQEG-proxy" target="_blank" class="example-link">Try it →</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Generic descriptions</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Various GPTs</div>
+                                <div class="example-desc">GPTs without clear specialization or unique value proposition</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Multi-purpose tools</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Various GPTs</div>
+                                <div class="example-desc">Tools that span multiple categories and don't fit a single cluster</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Experimental prototypes</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Various GPTs</div>
+                                <div class="example-desc">Early-stage or experimental GPT projects</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Language-specific tools</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Various GPTs</div>
+                                <div class="example-desc">GPTs designed for specific languages or cultural contexts</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        <div class="sub-cluster-header">Incomplete descriptions</div>
+                        <div class="sub-cluster-details">
+                            <div class="example-card">
+                                <div class="example-title">Various GPTs</div>
+                                <div class="example-desc">GPTs with broken or insufficient description data</div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+
+        </div>
+
+        <footer>
+            Generated: December 15, 2025 | Data Source: 8,092 English-only GPTs from ChatGPT Store
+        </footer>
+    </div>
+
+    <script>
+        // Animate progress bars on load
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.progress-fill').forEach(function(bar) {
+                    bar.style.width = bar.getAttribute('data-width');
+                });
+            }, 300);
+        });
+
+        // Toggle sub-cluster expansion
+        document.addEventListener('DOMContentLoaded', function() {
+            const subClusters = document.querySelectorAll('.sub-cluster');
+
+            subClusters.forEach(function(cluster) {
+                cluster.addEventListener('click', function() {
+                    this.classList.toggle('expanded');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

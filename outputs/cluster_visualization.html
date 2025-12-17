@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Ecosystem Taxonomy Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            color: #718096;
+            font-size: 1.1em;
+            margin-top: 15px;
+        }
+
+        .stats strong {
+            color: #667eea;
+        }
+
+        .legend {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .cluster-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .cluster-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .cluster-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .cluster-count {
+            font-size: 1.8em;
+            font-weight: 800;
+            padding: 5px 15px;
+            border-radius: 10px;
+            color: white;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .cluster-percentage {
+            font-size: 0.9em;
+            color: #718096;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        .sub-clusters {
+            list-style: none;
+        }
+
+        .sub-cluster {
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 0.95em;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            position: relative;
+            cursor: help;
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .sub-cluster:hover {
+            color: #667eea;
+            background-color: #f7fafc;
+            padding-left: 5px;
+        }
+
+        .sub-cluster:last-child {
+            border-bottom: none;
+        }
+
+        .sub-cluster::before {
+            content: '▸';
+            color: #a0aec0;
+            margin-right: 10px;
+            font-size: 0.8em;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            left: 105%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            z-index: 1000;
+            width: 320px;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 8px solid transparent;
+            border-right-color: #667eea;
+        }
+
+        .sub-cluster:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            font-size: 1.05em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .tooltip-desc {
+            font-size: 0.9em;
+            line-height: 1.4;
+            opacity: 0.95;
+        }
+
+        .tooltip-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            font-size: 0.85em;
+            text-decoration: none;
+            color: white;
+            transition: background 0.2s ease;
+        }
+
+        .tooltip-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1200px) {
+            .tooltip {
+                left: auto;
+                right: auto;
+                top: auto;
+                bottom: 100%;
+                transform: none;
+                margin-bottom: 10px;
+                width: 280px;
+            }
+
+            .tooltip::before {
+                right: auto;
+                top: 100%;
+                left: 20px;
+                transform: none;
+                border-right-color: transparent;
+                border-top-color: #667eea;
+            }
+        }
+
+        .summary-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .summary-title {
+            font-size: 1.8em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .bar-chart {
+            margin: 20px 0;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .bar-label {
+            width: 250px;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95em;
+        }
+
+        .bar-visual {
+            flex: 1;
+            height: 30px;
+            border-radius: 5px;
+            position: relative;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1.5s ease-out;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .insight-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .insight-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .insight-text {
+            font-size: 0.95em;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        /* Color scheme for clusters */
+        .cluster-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cluster-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .cluster-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .cluster-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .cluster-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .cluster-6 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .cluster-7 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .cluster-8 { background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); }
+        .cluster-9 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .cluster-10 { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+        .cluster-11 { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+        .cluster-12 { background: linear-gradient(135deg, #f8ceec 0%, #a88beb 100%); }
+        .cluster-13 { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
+        .cluster-14 { background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%); }
+
+        @media (max-width: 768px) {
+            .cluster-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .bar-label {
+                width: 180px;
+                font-size: 0.85em;
+            }
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 GPT Ecosystem Taxonomy</h1>
+            <div class="stats">
+                <strong>8,092</strong> English GPTs analyzed from ChatGPT Store<br>
+                <strong>77.8%</strong> Classified | <strong>22.2%</strong> Unclassified<br>
+                Generated: December 15, 2025
+            </div>
+        </header>
+
+        <div class="summary-section">
+            <h2 class="summary-title">📊 Cluster Size Comparison</h2>
+            <div class="bar-chart">
+                <div class="bar-item">
+                    <div class="bar-label">Creative Content</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-1" style="width: 0%" data-width="17.0%">1,373 (17.0%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Specialized Domain Experts</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-2" style="width: 0%" data-width="13.8%">1,120 (13.8%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Personal Development</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-3" style="width: 0%" data-width="7.3%">592 (7.3%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Educational & Learning</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-4" style="width: 0%" data-width="6.5%">522 (6.5%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Productivity & Organization</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-5" style="width: 0%" data-width="5.1%">409 (5.1%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Professional Business</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-6" style="width: 0%" data-width="4.7%">382 (4.7%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Writing & Marketing</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-7" style="width: 0%" data-width="4.6%">375 (4.6%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Legal & Compliance</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-8" style="width: 0%" data-width="4.5%">363 (4.5%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Technical & Coding</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-9" style="width: 0%" data-width="4.1%">329 (4.1%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Health & Wellness</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-10" style="width: 0%" data-width="3.8%">305 (3.8%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Entertainment & Gaming</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-11" style="width: 0%" data-width="3.1%">249 (3.1%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Spiritual & Mystical</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-12" style="width: 0%" data-width="2.1%">167 (2.1%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Niche Hobby & Lifestyle</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-13" style="width: 0%" data-width="1.3%">107 (1.3%)</div>
+                    </div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label">Unclassified</div>
+                    <div class="bar-visual">
+                        <div class="bar-fill cluster-14" style="width: 0%" data-width="22.2%">1,799 (22.2%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cluster-grid">
+            <!-- Cluster 1 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">1. Creative Content Generation</div>
+                        <div class="cluster-percentage">17.0% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-1">1,373</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-1" style="width: 0%" data-width="17%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">
+                        Image & Visual Art Generation
+                        <div class="tooltip">
+                            <span class="tooltip-title">GPT Icon Generator</span>
+                            <div class="tooltip-desc">Creates custom icons and visual branding elements for GPTs and applications</div>
+                            <a href="https://chatgpt.com/g/g-00Lkphpld-gpt-icon-generator" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Logo & Brand Design
+                        <div class="tooltip">
+                            <span class="tooltip-title">Logo Creator</span>
+                            <div class="tooltip-desc">Professional logo design with brand strategy and color psychology</div>
+                            <a href="https://chatgpt.com/g/g-gFt1ghYJl-logo-creator" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Character & Avatar Creation
+                        <div class="tooltip">
+                            <span class="tooltip-title">CharForge</span>
+                            <div class="tooltip-desc">Creates detailed character designs for games, stories, and creative projects</div>
+                            <a href="https://chatgpt.com/g/g-00Lh1zR3f-charforge" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Story & Narrative Generation
+                        <div class="tooltip">
+                            <span class="tooltip-title">AI Story Generator</span>
+                            <div class="tooltip-desc">Generates captivating tales and narratives with advanced storytelling techniques</div>
+                            <a href="https://chatgpt.com/g/g-LzrB0QwAB-ai-story-generator" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Animation & GIF Creation
+                        <div class="tooltip">
+                            <span class="tooltip-title">GIF GPT</span>
+                            <div class="tooltip-desc">Generates 8-bit style animated GIFs with retro aesthetic</div>
+                            <a href="https://chatgpt.com/g/g-0f6fZG9q0-gif-gpt" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Meme & Viral Content Creation
+                        <div class="tooltip">
+                            <span class="tooltip-title">Meme Master</span>
+                            <div class="tooltip-desc">Creates trending memes with cultural awareness and humor optimization</div>
+                            <a href="https://chatgpt.com/g/g-a7VLbl0jm-meme-master" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                    <li class="sub-cluster">
+                        Artistic Style Transfer
+                        <div class="tooltip">
+                            <span class="tooltip-title">Artistic Vision</span>
+                            <div class="tooltip-desc">Transforms images using famous artistic styles and movements</div>
+                            <a href="https://chatgpt.com/g/g-6tjd1B8sG-artistic-vision" target="_blank" class="tooltip-link">Try it →</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Cluster 2 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">2. Specialized Domain Experts</div>
+                        <div class="cluster-percentage">13.8% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-2">1,120</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-2" style="width: 0%" data-width="13.8%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-80BBfRYBn-biochemistry-genetics-and-molecular-biology" target="_blank">Hard Sciences (Physics, Chemistry, Biology)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-z1lIx3L13-ode-calculator" target="_blank">Mathematics & Advanced Computation</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-00M3Go7mz-psychology-insight-analyzer" target="_blank">Psychology & Behavioral Sciences</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-057LZjps8-galaxy-chat" target="_blank">Space & Astronomy</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-00Cjtpc0z-xenolinguo-alien-language-generated-by" target="_blank">Linguistics & Language Theory</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-i21b4H7Mf-c-g-jung" target="_blank">Philosophy & Ethics</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-67e749d83f0881918616c085b1a580d0-nanofabrication" target="_blank">Advanced Engineering</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 3 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">3. Personal Development & Coaching</div>
+                        <div class="cluster-percentage">7.3% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-3">592</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-3" style="width: 0%" data-width="7.3%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-00Vxlldtm-engineering-manager-coach" target="_blank">Career & Professional Coaching</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-8FixlbFKj-life-navigator" target="_blank">Life Coaching & Goal Setting</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-ZWQuVnjkF-feedback-coach" target="_blank">Communication & Interpersonal Skills</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-sEKD2Zy0m-leadership-coach" target="_blank">Leadership Development</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-67b26a0a91d08191b37a0a289733ba82-quit-alcohol-tracy" target="_blank">Habit Formation & Behavior Change</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-3kPQnXXfn-confidence-builder" target="_blank">Confidence & Self-Esteem</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-03Nvt600n-red-team-mentor" target="_blank">Mentorship & Guidance</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 4 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">4. Educational & Learning</div>
+                        <div class="cluster-percentage">6.5% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-4">522</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-4" style="width: 0%" data-width="6.5%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-3guUZJ6qF-study-buddy" target="_blank">Test Preparation (SAT, ACT, GRE)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-PLYSLfAy3-math-solver" target="_blank">Mathematics Tutoring</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-iNQwhh1qy-german-teacher-gpt" target="_blank">Language Learning</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-GbLbctpPz-universal-primer" target="_blank">STEM Education</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-aOmUbFbcZ-code-buddy" target="_blank">Programming & Coding Education</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-4UWODpApy-abstract-generator" target="_blank">Academic Writing & Research</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-sN4UpxD0L-wikigpt" target="_blank">General Knowledge & Trivia</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 5 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">5. Productivity & Organization</div>
+                        <div class="cluster-percentage">5.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-5">409</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-5" style="width: 0%" data-width="5.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-46CgTNcL8" target="_blank">Project Management</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-4uSQohyLW-bullet-journaling-prodigy" target="_blank">Note-Taking & Knowledge Management</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-7MsBmUB2d-calendar-optimizer" target="_blank">Time Management & Scheduling</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-DyxVk0WN0-apollo-gpt" target="_blank">Personal Assistant</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Cjgm4Hmw-gpt-cookbook-assistant" target="_blank">Workflow Automation</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-BQMN8wQ6j-digital-legacy-planner" target="_blank">Document Organization</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 6 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">6. Professional Business Tools</div>
+                        <div class="cluster-percentage">4.7% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-6">382</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-6" style="width: 0%" data-width="4.7%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-1XGd3uF1T-pitch-deck-gpt" target="_blank">Pitch Deck & Presentation Creation</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-VLxryqnlj-business-ideas-plan-generator" target="_blank">Business Planning & Strategy</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-CS0BEb5pJ-sales-assistant-ultimate-sales-tool-for-sellers" target="_blank">Sales & Lead Generation</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-u7kq0UsG2-buffett-investment-tool" target="_blank">Financial Analysis & Investment</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-DLrpkpntx-executive-insight" target="_blank">Consulting & Advisory</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0DxZTgo0i-business-lookup" target="_blank">Market Research & Analysis</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-T2bAANodC-saas" target="_blank">SaaS & Technology Business</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 7 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">7. Writing & Content Marketing</div>
+                        <div class="cluster-percentage">4.6% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-7">375</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-7" style="width: 0%" data-width="4.6%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-05Ju8F8Ts-keyword-planner-seo" target="_blank">SEO & Search Optimization</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0LVKVFAOE-viral-muse" target="_blank">Social Media Content</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-07Kcpnfmn-brand-crafter" target="_blank">Copywriting & Sales Copy</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-Z6qhetSRr-product-description-generator" target="_blank">Product Descriptions</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-rkfllG5TM" target="_blank">Blog & Article Writing</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-Sdzx1bnMN-responder" target="_blank">Email Marketing</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-3wv1Wj3Rg-execu-x-post-companion" target="_blank">Brand Voice Development</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 8 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">8. Legal & Compliance</div>
+                        <div class="cluster-percentage">4.5% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-8">363</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-8" style="width: 0%" data-width="4.5%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-23MFe5i3r-law-order" target="_blank">Contract Law & Drafting</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-26Ogj8JJ4-lexiai-us-law" target="_blank">Jurisdiction-Specific Law (US)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-COySiYHrU-pre-solicitor-aitm-uk-law-simplified-free" target="_blank">Jurisdiction-Specific Law (UK/International)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-hiahMzXsY-california-building-code-helper" target="_blank">Regulatory Compliance</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-prBU1ubiC-supreme-court-rulings" target="_blank">Supreme Court & Case Law</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0BI04f09L-kazakhstani-law-assistant" target="_blank">Specialized Legal Domains</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 9 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">9. Technical & Coding</div>
+                        <div class="cluster-percentage">4.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-9">329</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-9" style="width: 0%" data-width="4.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-ihUOhctYf-css-code-helper" target="_blank">Web Development (Frontend/Backend)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Fjo9Edoq-javascript-gpt" target="_blank">Specific Languages (Python, JavaScript, etc.)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-6740a711568c819189f561c15e0707e6-beta-sql-expert-pro" target="_blank">Database & SQL</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-EkGy9mnx9-linux-specialist" target="_blank">DevOps & Infrastructure</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-jUMcG3wTK-contract-builder-2-0" target="_blank">Smart Contracts & Blockchain</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-FYMRmDqEY-visual-studio-code-expert" target="_blank">IDE & Development Tools</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Sjxa4A1J-code-whiz-pro" target="_blank">Code Review & Debugging</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 10 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">10. Health & Wellness</div>
+                        <div class="cluster-percentage">3.8% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-10">305</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-10" style="width: 0%" data-width="3.8%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-XdmUwHrDs-dermatology-advisor" target="_blank">Dermatology & Skin Care</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-P0TXECLkv-chef-nutrigourmet" target="_blank">Nutrition & Diet Planning</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Unl1Zwyp-mental-health-conversation-guide" target="_blank">Mental Health Support</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-088Zut1ap-swim-coach-pro" target="_blank">Fitness & Exercise</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Vutlfcvf-covid-19" target="_blank">Medical Information & Conditions</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0t6atNK4C-arfid-helper" target="_blank">Specialized Health Conditions</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-a30IbALzW-healthcare-support-workers-all-other-assistant" target="_blank">Healthcare Professional Support</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 11 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">11. Entertainment & Gaming</div>
+                        <div class="cluster-percentage">3.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-11">249</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-11" style="width: 0%" data-width="3.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-qdH2XGV5M-the-oracle" target="_blank">Role-Playing Games (RPG)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-ySVdGHfgB-soul-seeker-gpt" target="_blank">Video Game Guides</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-3HyguSH8I-tracer-bullet" target="_blank">Sports Analysis & Statistics</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-09Gpm0Nti-text-quest" target="_blank">Interactive Story Games</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-GsRUjaYvz-battle-gpt" target="_blank">Battle Simulators</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-KHcdRU9or-situation-puzzle-hai-gui-tang" target="_blank">Puzzle & Challenge Games</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0i2rSQUGt-survival-mentor" target="_blank">Survival & Strategy Games</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 12 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">12. Spiritual & Mystical</div>
+                        <div class="cluster-percentage">2.1% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-12">167</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-12" style="width: 0%" data-width="2.1%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-turuXxK5O-tarot-love" target="_blank">Tarot & Card Reading</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-aLVuuBB9z-daily-horoscope-numbers-biorhythms-from-seeds-net" target="_blank">Astrology & Horoscopes</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Aiuh2Npa-the-oracle-of-delphai-apollo-the-seer" target="_blank">Oracle & Divination</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-Ijn8Z6frl-kjv-scripture-scholar" target="_blank">Religious & Spiritual Texts</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-5woUyUDBR-palm-reader" target="_blank">Palmistry & Physical Divination</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-TaAYv7qNm-oracle-of-wisdom" target="_blank">Wisdom & Philosophy</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-7T7TFTXxM-talk-to-god" target="_blank">Direct Divine Communication</a></li>
+                </ul>
+            </div>
+
+            <!-- Cluster 13 -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">13. Niche Hobby & Lifestyle</div>
+                        <div class="cluster-percentage">1.3% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-13">107</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-13" style="width: 0%" data-width="1.3%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Tkruotfk-swimming-coach" target="_blank">Sports & Fitness Coaching</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-ccSSArTEk-beehive-builder" target="_blank">Crafts & DIY Projects</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-yaLSMy7Q2-patchwork-pal-quilter-s-aid" target="_blank">Textile Arts (Quilting, Sewing, Knitting)</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-waqDkUJEv-christmas-decorations" target="_blank">Home Decor & Interior Design</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0A9Iqsdml-flights" target="_blank">Travel & Tourism</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-0Msyma1Ec-best-man-maid-of-honor-wedding-speech" target="_blank">Wedding Planning</a></li>
+                    <li class="sub-cluster"><a href="https://chatgpt.com/g/g-V8DkAO9eK-horse-racing-form-analyst" target="_blank">Specialized Collecting & Hobbies</a></li>
+                </ul>
+            </div>
+
+            <!-- Unclassified -->
+            <div class="cluster-card">
+                <div class="cluster-header">
+                    <div>
+                        <div class="cluster-title">Unclassified</div>
+                        <div class="cluster-percentage">22.2% of ecosystem</div>
+                    </div>
+                    <div class="cluster-count cluster-14">1,799</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill cluster-14" style="width: 0%" data-width="22.2%"></div>
+                </div>
+                <ul class="sub-clusters">
+                    <li class="sub-cluster">Extremely niche or unique purposes</li>
+                    <li class="sub-cluster">Generic descriptions without clear specialization</li>
+                    <li class="sub-cluster">Multi-purpose tools spanning multiple categories</li>
+                    <li class="sub-cluster">Experimental or prototype GPTs</li>
+                    <li class="sub-cluster">Language-specific or culturally-specific tools</li>
+                    <li class="sub-cluster">Broken or incomplete descriptions</li>
+                    <li class="sub-cluster">Example: <a href="https://chatgpt.com/g/g-0WRddrQEG-proxy" target="_blank">Proxy</a> - "New version of GPT available"</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <h2 class="summary-title">💡 Key Insights</h2>
+            <div class="insights">
+                <div class="insight-card">
+                    <div class="insight-icon">🎨</div>
+                    <div class="insight-title">Creative Dominance</div>
+                    <div class="insight-text">Creative Content Generation (17%) is the largest cluster, showing massive demand for AI-assisted creativity in images, stories, and visual content.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">🔬</div>
+                    <div class="insight-title">Expert Knowledge Accessibility</div>
+                    <div class="insight-text">Specialized Domain Experts (13.8%) democratizes expert knowledge in sciences, mathematics, and academic fields previously locked behind credentials.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">💼</div>
+                    <div class="insight-title">Professional Adoption</div>
+                    <div class="insight-text">Combined professional clusters (Business + Legal + Technical + Writing) = 17.9%, indicating strong workplace integration.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">🌱</div>
+                    <div class="insight-title">Holistic Human Needs</div>
+                    <div class="insight-text">Personal Development + Health + Spiritual clusters show GPTs address whole-person wellbeing, not just productivity.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">🎯</div>
+                    <div class="insight-title">Long Tail Opportunity</div>
+                    <div class="insight-text">The 22% unclassified and small niche clusters reveal enormous diversity and opportunity for specialization in the ecosystem.</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">📊</div>
+                    <div class="insight-title">Quality Variation</div>
+                    <div class="insight-text">Wide variation in description clarity suggests discovery and curation remain major ecosystem challenges to solve.</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Generated: December 15, 2025 | Data Source: 8,092 English-only GPTs from ChatGPT Store
+        </footer>
+    </div>
+
+    <script>
+        // Animate progress bars and bar charts on load
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // Animate cluster card progress bars
+                document.querySelectorAll('.progress-fill').forEach(function(bar) {
+                    bar.style.width = bar.getAttribute('data-width');
+                });
+
+                // Animate bar chart
+                document.querySelectorAll('.bar-fill').forEach(function(bar) {
+                    bar.style.width = bar.getAttribute('data-width');
+                });
+            }, 300);
+        });
+    </script>
+</body>
+</html>
